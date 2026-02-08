@@ -1,3 +1,4 @@
+# Bharat Multi-Agent AI Knowledge OS  
 ## System Design Document
 
 ---
@@ -6,23 +7,25 @@
 
 Bharat Multi-Agent AI Knowledge OS is a serverless, AI-powered learning platform designed to help Indian students and developers understand complex technical content through collaborative AI agents. The system combines multi-agent reasoning, Retrieval-Augmented Generation (RAG), and persistent user memory to deliver personalized, multilingual, and context-aware learning experiences.
 
-The architecture prioritizes scalability, cost efficiency, modularity, and real-world feasibility using AWS-native services.
+This document serves as a technical blueprint describing the system architecture, component interactions, data flows, design decisions, and scalability considerations.
 
 ---
 
 ## 2. Design Goals
 
-- Enable multi-agent collaboration for structured reasoning  
+- Enable collaborative multi-agent AI reasoning  
 - Support document-grounded learning using RAG  
-- Maintain persistent learning memory per user  
+- Maintain persistent, personalized learning memory per user  
 - Ensure low-latency conversational interactions  
 - Scale horizontally using serverless infrastructure  
 - Remain cost-efficient for student-scale deployments  
-- Follow secure-by-default architectural principles  
+- Follow secure-by-default and privacy-first principles  
 
 ---
 
 ## 3. High-Level Architecture
+
+![System Architecture](img/arch.png)
 
 The system follows a layered, event-driven architecture:
 
@@ -36,56 +39,56 @@ The system follows a layered, event-driven architecture:
 8. Memory & Personalization Layer  
 9. Asynchronous Background Processing  
 
-Each layer is loosely coupled to ensure maintainability and scalability.
+Each layer is loosely coupled to ensure maintainability, scalability, and independent evolution.
 
 ---
 
 ## 4. Component Breakdown
 
 ### 4.1 User Layer
-Users interact with the platform to upload PDFs, ask questions, and receive AI-guided learning support.
+End users (students and developers) interact with the system to upload documents, submit queries, and receive AI-driven learning assistance.
 
 ---
 
 ### 4.2 Frontend Application
 - Built using React / Next.js  
-- Provides chat interface, document upload, learning roadmap view, and multilingual responses  
-- Communicates securely with backend APIs  
+- Provides chat interface, document upload, learning roadmap visualization, and multilingual responses  
+- Communicates securely with backend services via REST APIs  
 
 ---
 
 ### 4.3 API & Authentication Layer
 - Implemented using Amazon API Gateway  
 - Handles request routing, authentication, and rate limiting  
-- Acts as the single entry point for frontend requests  
+- Acts as the single entry point for all client requests  
 
 ---
 
 ### 4.4 Serverless Orchestration Layer
 - Implemented using AWS Lambda  
-- Acts as the Multi-Agent Controller  
-- Responsibilities include:
+- Functions as the Multi-Agent Controller  
+- Responsibilities:
   - Session management  
-  - Agent routing and orchestration  
-  - Retrieval and memory workflow control  
-  - Synchronous and asynchronous task handling  
+  - Agent selection and orchestration  
+  - Routing between retrieval, reasoning, and memory workflows  
+  - Managing synchronous and asynchronous execution paths  
 
 ---
 
 ### 4.5 AI Reasoning Layer
 - Powered by Amazon Bedrock  
-- Includes specialized agents:
+- Composed of specialized agents:
   - **Planner Agent** – Generates personalized learning roadmaps  
   - **Tutor Agent** – Explains concepts step-by-step  
-  - **Coding Agent** – Debugging and code explanation  
-- Agents collaborate through shared context  
+  - **Coding Agent** – Performs code debugging and explanations  
+- Agents collaborate using shared contextual state managed by the orchestration layer  
 
 ---
 
 ### 4.6 Knowledge Retrieval Layer (RAG)
-- Uses vector embeddings for semantic search  
-- Retrieves relevant document chunks from stored PDFs  
-- Grounds AI responses in user-provided content  
+- Uses vector embeddings for semantic similarity search  
+- Retrieves relevant document chunks from user-uploaded PDFs  
+- Ensures AI responses are grounded in source material  
 
 ---
 
@@ -100,52 +103,101 @@ Users interact with the platform to upload PDFs, ask questions, and receive AI-g
 - **Amazon DynamoDB**
   - Stores user learning history  
   - Tracks preferences, mistakes, and progress  
-  - Enables adaptive personalization  
+  - Enables adaptive personalization across sessions  
 
 ---
 
 ### 4.9 Asynchronous Background Processing
-Handles heavy operations such as:
-- PDF ingestion  
+Handles compute-intensive tasks such as:
+- PDF ingestion and parsing  
 - Embedding generation  
 - Large document indexing  
 
-Executed asynchronously to maintain low chat latency.
+These tasks are executed asynchronously to maintain low chat latency.
 
 ---
 
-## 5. Data Flow Summary
+## 5. Data Models & Schemas
 
-1. User submits a query or uploads a document  
-2. Request reaches API Gateway  
+### User Memory Entity
+- user_id  
+- session_id  
+- learning_progress  
+- preferences  
+- error_patterns  
+- last_updated  
+
+### Document Metadata Entity
+- document_id  
+- user_id  
+- file_path (S3)  
+- chunk_references  
+- embedding_ids  
+- created_timestamp  
+
+---
+
+## 6. API & Interface Design
+
+### Example Endpoints
+- `POST /upload` – Upload PDF documents  
+- `POST /query` – Submit learning queries  
+- `GET /roadmap` – Retrieve personalized learning roadmap  
+
+All APIs are stateless and secured via API Gateway.
+
+---
+
+## 7. Data Flow Summary
+
+1. User uploads a document or submits a query  
+2. Request enters through API Gateway  
 3. AWS Lambda orchestrates agent workflow  
 4. Relevant documents are retrieved via RAG  
-5. AI agents generate grounded responses  
+5. AI agents collaboratively generate responses  
 6. User memory is updated  
 7. Response is returned to the frontend  
 
 ---
 
-## 6. Security Considerations
+## 8. Technical Decisions & Rationale
 
-- Role-based access control  
-- User-isolated document storage  
+- **Serverless Architecture:** Enables automatic scaling and cost efficiency  
+- **Amazon Bedrock:** Provides managed access to foundation models  
+- **RAG Pattern:** Prevents hallucinations and improves accuracy  
+- **DynamoDB:** Low-latency, scalable user memory storage  
+- **S3:** Durable and cost-effective document storage  
+
+---
+
+## 9. Error Handling & Security
+
+- Graceful fallback for model or retrieval failures  
+- Request validation and rate limiting  
+- User-isolated data access  
 - Encryption at rest and in transit  
-- Stateless APIs with secure session handling  
+- Stateless and secure API design  
 
 ---
 
-## 7. Scalability and Cost Efficiency
+## 10. Testing Strategy
 
-- Serverless infrastructure enables automatic scaling  
-- Asynchronous workflows reduce compute overhead  
-- Modular agent design supports incremental expansion  
-- Architecture scales from MVP to large deployments  
-
----
+- Unit testing for Lambda functions  
+- Integration testing for RAG pipelines  
+- API validation tests  
+- Manual testing of agent collaboration flows  
 
 ---
 
-## 9. Conclusion
+## 11. Scalability and Cost Efficiency
 
-This design delivers a production-ready, scalable, and innovative AI system that moves beyond traditional chatbots to provide adaptive, multi-agent learning assistance tailored for the Indian education ecosystem.
+- Serverless infrastructure supports horizontal scaling  
+- Asynchronous workflows reduce synchronous compute load  
+- Modular agent design enables incremental expansion  
+- Architecture scales from MVP to large-scale deployments  
+
+---
+
+## 12. Conclusion
+
+This design delivers a production-ready, scalable, and extensible AI system that moves beyond traditional chatbots by introducing multi-agent collaboration, document-grounded reasoning, and persistent personalization tailored for the Indian education ecosystem.
